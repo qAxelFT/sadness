@@ -19,10 +19,11 @@ int main(int argc, char** argv) {
 
   char target[100];
   
-  fptrw = fopen("tmp.txt", "w+");
+  
   fptr = fopen(TODO_PATH, "a+");
+  fptrw = fopen("tmp.txt", "w+");
 
-  if(fptr == NULL || fptrw ==NULL) {
+  if(fptr == NULL || fptrw == NULL) {
     fprintf(stderr, "%s", "Could not open file\n");
     exit(-1);
   }
@@ -32,34 +33,34 @@ int main(int argc, char** argv) {
 
     fprintf(fptr, "[ ] %s\n", text);
 
+    remove("tmp.txt");
   } else if(!strcmp("complete", command)) {
     int numLine = atoi(argv[2]);
 
     while(fgets(line, 255, fptr)) {
       if(count == numLine) { 
-
         snprintf(target, sizeof target, "%.3s", line);
         if(!strcmp(target, "[ ]")) {
-
           char* title = line + 4;
 
           fprintf(fptrw, "[*] %s", title);
+          
+        } else {
+          fprintf(stderr, "%s", "That task is already complete!");
+          return -1;
         }
       } else {
-
         fputs(line, fptrw);
       }
 
       count++;
     }
+    remove(TODO_PATH);
+    rename("tmp.txt", TODO_PATH);
   }
 
   fclose(fptr);
   fclose(fptrw);
-
-  remove(TODO_PATH);
-
-  rename("tmp.txt", TODO_PATH);
 
   return 0;
 }
