@@ -6,7 +6,58 @@
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
 
+void complete(FILE *fptr, FILE *fptrw, int index, const char* TODO_PATH) {
+  char target[100];
+  char line[255];
+
+  int count = 0;
+
+  while(fgets(line, 255, fptr)) {
+    if(index < 1) {
+      fprintf(stderr, "%s", "Index bellow 1");
+      remove("tmp.txt");
+
+      exit(-1);
+    }
+    if(count == index - 1) { 
+      snprintf(target, sizeof(target), "%.3s", line);
+      if(!strcmp(target, "[ ]")) {
+        char* title = line + 4;
+
+        fprintf(fptrw, "[*] %s", title);
+          
+      } else {
+        fprintf(stderr, "%s", "That task is already complete!");
+        remove("tmp.txt");
+        exit(-1);
+      }
+    } else {
+      fputs(line, fptrw);
+    }
+
+    count++;
+  }
+  remove(TODO_PATH);
+  rename("tmp.txt", TODO_PATH);
+}
+
+void list(FILE *fptr) {
+  char target[100];
+  char line[255]; 
+  while(fgets(line, 255, fptr)) {
+    char* title = line + 4;
+
+    snprintf(target, sizeof(target), "%.3s", line);
+
+    if(!strcmp(target, "[*]")) {
+      printf("%s %s%s",GREEN , title, CLEAR_COLOR);
+    } else {
+      printf("%s %s%s",RED , title, CLEAR_COLOR);
+    }
+  }
+}
 int main(int argc, char** argv) {
+  
   const char* TODO_PATH = getenv("TODO_PATH");
 
   if(argc != 3 && !strcmp("add", argv[1])) {
@@ -26,11 +77,7 @@ int main(int argc, char** argv) {
   FILE *fptr;
   FILE *fptrw;
 
-  int count = 0;
-  char line[255];
   char* command = argv[1];
-
-  char target[100];
     
   fptr = fopen(TODO_PATH, "a+");
   fptrw = fopen("tmp.txt", "w+");
@@ -45,52 +92,17 @@ int main(int argc, char** argv) {
 
     fprintf(fptr, "[ ] %s\n", text);
 
-    remove("tmp.txt");
   } else if(!strcmp("complete", command)) {
     int numLine = atoi(argv[2]);
 
-    while(fgets(line, 255, fptr)) {
-      if(numLine < 1) {
-        fprintf(stderr, "%s", "Index bellow 1");
-        exit(-1);
-      }
-      if(count == numLine - 1) { 
-        snprintf(target, sizeof(target), "%.3s", line);
-        if(!strcmp(target, "[ ]")) {
-          char* title = line + 4;
-
-          fprintf(fptrw, "[*] %s", title);
-          
-        } else {
-          fprintf(stderr, "%s", "That task is already complete!");
-          return -1;
-        }
-      } else {
-        fputs(line, fptrw);
-      }
-
-      count++;
-    }
-    remove(TODO_PATH);
-    rename("tmp.txt", TODO_PATH);
-
+    complete(fptr, fptrw, numLine, TODO_PATH);
   } else if(!strcmp("list", command)) {
-    while(fgets(line, 255, fptr)) {
-      char* title = line + 4;
-
-      snprintf(target, sizeof(target), "%.3s", line);
-
-      if(!strcmp(target, "[*]")) {
-        printf("%s %s%s",GREEN , title, CLEAR_COLOR);
-      } else {
-        printf("%s %s%s",RED , title, CLEAR_COLOR);
-      }
-    }
-    rename("tmp.txt", TODO_PATH);
+    list(fptr);
   }
 
   fclose(fptr);
   fclose(fptrw);
 
+  remove("tmp.txt");
   return 0;
 }
